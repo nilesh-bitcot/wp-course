@@ -181,3 +181,53 @@ function wdt_restrict_template_redirect() {
         exit();
     }
 }
+
+
+
+/********* custom user fields/data ********/
+add_action( 'show_user_profile', 'extra_user_profile_fields' );
+add_action( 'edit_user_profile', 'extra_user_profile_fields' );
+
+function extra_user_profile_fields( $user ) { 
+    ?>
+    <h3><?php _e("Extra profile information", "blank"); ?></h3>
+
+    <table class="form-table">
+    <tr>
+        <th><label for="hometown"><?php _e("Home Town"); ?></label></th>
+        <td>
+            <input type="text" name="hometown" id="hometown" value="<?php echo esc_attr( get_the_author_meta( 'hometown', $user->ID ) ); ?>" class="regular-text" /><br />
+            <span class="description"><?php _e("Please enter your hometown."); ?></span>
+        </td>
+    </tr>
+    </table>
+    <?php 
+}
+
+add_action( 'personal_options_update', 'save_extra_user_profile_fields' );
+add_action( 'edit_user_profile_update', 'save_extra_user_profile_fields' );
+
+function save_extra_user_profile_fields( $user_id ) {
+    if ( empty( $_POST['_wpnonce'] ) || ! wp_verify_nonce( $_POST['_wpnonce'], 'update-user_' . $user_id ) ) {
+        return;
+    }
+    
+    if ( !current_user_can( 'edit_user', $user_id ) ) { 
+        return false; 
+    }
+    update_user_meta( $user_id, 'hometown', $_POST['hometown'] );
+}
+
+
+/***** Show that meta field in rest api also *****/
+
+add_action( 'rest_api_init', 'register_experience_meta_fields');
+function register_experience_meta_fields(){
+
+    register_meta( 'user', 'hometown', array(
+        'type' => 'string',
+        'description' => 'hometown',
+        'single' => true,
+        'show_in_rest' => true
+    ));
+}

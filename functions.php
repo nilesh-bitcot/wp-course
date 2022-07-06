@@ -60,3 +60,52 @@ add_action('init', function(){
     }
 });
 
+/*************************************/
+
+// wdt_registration_form
+add_shortcode( 'wdt_registration_form', 'wdt_registration_form_shortcode_func' );
+function wdt_registration_form_shortcode_func( $atts ) {
+    ob_start();
+    ?>
+    <h2>Register form</h2>
+    <form method="post" name="wdt-register_form">
+        <input type="text" name="first_name" id="first_name" placeholder="first_name">
+        <input type="text" name="last_name" id="last_name" placeholder="last_name">
+        <input type="email" name="user_login" id="user_login" placeholder="Email">
+        <input type="password" name="user_pass" id="user_pass" placeholder="password">
+        <input type="password" name="user_pass_confirm" id="user_pass_confirm" placeholder="confirm password">
+        <input type="hidden" name="action" value="wdt_custom_register_action">
+        <input type="submit" name="signup" value="Register">
+    </form>
+ 
+    <?php
+    return ob_get_clean();
+}
+
+
+add_action('init', function(){
+    if( isset($_POST['action']) && $_POST['action'] == 'wdt_custom_register_action' ){
+        if( filter_var($_POST['user_login'], FILTER_VALIDATE_EMAIL) === false ) {
+            echo 'Not a valid email id'; return;
+        }
+        if( $_POST['user_pass'] !== $_POST['user_pass_confirm'] ){
+            echo 'password not matched'; return;
+        }
+        $userdata = array(
+            'first_name' => sanitize_text_field($_POST['first_name']),
+            'last_name' => sanitize_text_field($_POST['last_name']),
+            'user_login'    => $_POST['user_login'],
+            'user_email'  => $_POST['user_login'],
+            'user_pass' => $_POST['user_pass']
+        );
+
+        $user_id = wp_insert_user( $userdata );
+     
+        if ( is_wp_error( $user_id ) ) {
+            echo $user_id->get_error_message();
+        }
+        else{
+            wp_redirect( home_url() ); exit;
+        }
+    }
+});

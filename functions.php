@@ -171,3 +171,13 @@ function wdt_custom_register_ajax_action(){
         die();
     }
 }
+
+
+/********* Restrict page for logged in users only ************/
+add_action( 'template_redirect', 'wdt_restrict_template_redirect' );
+function wdt_restrict_template_redirect() {
+    if ( is_page( 'sample-page' ) && ! is_user_logged_in() ) {
+        wp_redirect( home_url(), 307 );
+        exit();
+    }
+}

@@ -9,3 +9,21 @@ This is the child theme for Bootstrap Basic4 theme, generated with Generate Chil
 
 (optional values you can add: Theme URI, Author URI, License, License URI, Tags, Text Domain)
 */
+
+.anchor {
+    margin-left: 10px;
+    cursor: pointer;
+    border: 1px solid;
+    padding: 4px;
+}
+.anchor.active{
+    background-color: #333;
+    color:#fff;
+}
+#post_list_loader{
+    /* display: none !important; */
+}
+#post_list_loader svg {
+    width: 100px;
+    height: 100px;
+}

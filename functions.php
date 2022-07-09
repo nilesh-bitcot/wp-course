@@ -231,3 +231,32 @@ function register_experience_meta_fields(){
         'show_in_rest' => true
     ));
 }
+
+/**
+ * Ajax handler for posts list with paginations
+ */
+
+add_action('wp_ajax_get_posts_ajax','get_posts_ajax_callback');
+add_action('wp_ajax_nopriv_get_posts_ajax','get_posts_ajax_callback');
+function get_posts_ajax_callback(){
+    $posts_per_page = isset($_GET['posts_per_page']) ? intval($_GET['posts_per_page']) : 3;
+    $paged = isset($_GET['paged']) ? intval($_GET['paged']) : 1;
+
+    $args = array(
+        'post_type' => 'post',
+        'posts_per_page' => $posts_per_page,
+        'paged' => $paged
+    );
+    $html = '';
+    $posts = new WP_Query($args);
+    if( $posts->have_posts() ):
+        while($posts->have_posts()):$posts->the_post();
+            $html .= '<h3>'.get_the_title().'</h3>';
+        endwhile;
+    endif;
+    $total_pages = $posts->max_num_pages;
+    // echo $html;
+    echo json_encode( array('html' => $html, 'totol_page'=> $total_pages) );
+    die;
+
+}

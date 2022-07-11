@@ -260,3 +260,42 @@ function get_posts_ajax_callback(){
     die;
 
 }
+
+/**
+ * Ajax search post
+ */
+
+add_action('wp_ajax_search__ajax','search__ajax_callback');
+add_action('wp_ajax_nopriv_search__ajax','search__ajax_callback');
+function search__ajax_callback(){
+    
+    $search_input = isset($_GET['search_input']) ? trim($_GET['search_input']) : '';
+    // $posts_per_page = isset($_GET['posts_per_page']) ? intval($_GET['posts_per_page']) : 3;
+    // $paged = isset($_GET['paged']) ? intval($_GET['paged']) : 1;
+
+    if( empty($search_input) ){
+        echo json_encode( array('html' => '<p>Please enter any text to search</p>', 'totol_page'=> 0) );
+        die;
+    }
+
+    $args = array(
+        'post_type' => 'post',
+        's' => $search_input,
+        // 'posts_per_page' => $posts_per_page,
+        // 'paged' => $paged
+    );
+    $html = '';
+    $posts = new WP_Query($args);
+    if( $posts->have_posts() ):
+        while($posts->have_posts()):$posts->the_post();
+            $html .= '<h3>'.get_the_title().'</h3>';
+        endwhile;
+    else:
+        $html = '<p>No result found</p>';
+    endif;
+    $total_pages = $posts->max_num_pages;
+    // echo $html;
+    echo json_encode( array('html' => $html, 'totol_page'=> $total_pages) );
+    die;
+
+}

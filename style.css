@@ -21,7 +21,7 @@ This is the child theme for Bootstrap Basic4 theme, generated with Generate Chil
     color:#fff;
 }
 #post_list_loader{
-    /* display: none !important; */
+    display: none !important;
 }
 #post_list_loader svg {
     width: 100px;

@@ -270,8 +270,8 @@ add_action('wp_ajax_nopriv_search__ajax','search__ajax_callback');
 function search__ajax_callback(){
     
     $search_input = isset($_GET['search_input']) ? trim($_GET['search_input']) : '';
-    // $posts_per_page = isset($_GET['posts_per_page']) ? intval($_GET['posts_per_page']) : 3;
-    // $paged = isset($_GET['paged']) ? intval($_GET['paged']) : 1;
+    $posts_per_page = isset($_GET['posts_per_page']) ? intval($_GET['posts_per_page']) : 3;
+    $paged = isset($_GET['paged']) ? intval($_GET['paged']) : 1;
 
     if( empty($search_input) ){
         echo json_encode( array('html' => '<p>Please enter any text to search</p>', 'totol_page'=> 0) );
@@ -281,11 +281,12 @@ function search__ajax_callback(){
     $args = array(
         'post_type' => 'post',
         's' => $search_input,
-        // 'posts_per_page' => $posts_per_page,
-        // 'paged' => $paged
+        'posts_per_page' => $posts_per_page,
+        'paged' => $paged
     );
     $html = '';
     $posts = new WP_Query($args);
+    // var_dump($posts);
     if( $posts->have_posts() ):
         while($posts->have_posts()):$posts->the_post();
             $html .= '<h3>'.get_the_title().'</h3>';
@@ -298,4 +299,36 @@ function search__ajax_callback(){
     echo json_encode( array('html' => $html, 'totol_page'=> $total_pages) );
     die;
 
+}
+
+/**
+ * Learn Nonce
+ */
+add_action('init', function(){
+    if( isset($_POST['action']) && $_POST['action'] == 'learn_nonce_1' ){
+        $search = $_POST['search_value'];
+        if( !( check_admin_referer( 'search_form_nonce' ) ) ){
+            die('you are not permited to do this action');
+        }
+
+        echo 'nonce successfully varified';
+    }     
+
+    if( isset($_POST['action']) && $_POST['action'] == 'learn_nonce_2' ){
+        $search = $_POST['search_value'];
+        $nonce = $_POST['_nonce'];
+        if( !wp_verify_nonce( $nonce, 'search_form_nonce_2') ){
+            die('form 2 actino nonce faileed');
+        }
+
+        echo 'nonce successuflly varified for form 2';
+    }     
+});
+
+
+add_action('wp_ajax_learn_nonce_ajax','learn_nonce_ajax_callback');
+add_action('wp_ajax_nopriv_learn_nonce_ajax','learn_nonce_ajax_callback');
+function learn_nonce_ajax_callback(){
+    $nonce = $_POST['nonce'];
+    echo 'ddf'; die;
 }

@@ -337,3 +337,93 @@ function learn_nonce_ajax_callback(){
     // }
     echo 'form submitted successfully'; die;
 }
+
+
+/**
+ * Create/register custom post type to store entry of custom enquiry form
+ */
+
+function wporg_custom_post_type() {
+    register_post_type('neo_form_entry',
+        array(
+            'labels'      => array(
+                'name'          => __('Neo Form Entry', 'textdomain'),
+                'singular_name' => __('Neo Form Entry', 'textdomain'),
+            ),
+            'supports'            => array( 'title', 'editor' ),
+            'hierarchical'        => false,
+            'show_ui'             => true,
+            'show_in_menu'        => true,
+            'has_archive' => false,
+        )
+    );
+}
+add_action('init', 'wporg_custom_post_type');
+
+/**
+ * Action to handle enquiry form submit
+ */
+add_action('init', 'enquiry_form_submit_handler');
+function enquiry_form_submit_handler(){
+    if( isset($_POST['action']) && $_POST['action'] == 'enquiry_form' ){
+        if( !wp_verify_nonce( $_POST['_nonce'], 'enquiry_form_nonce') ){
+            die('actino nonce failled');
+        }
+
+        $fname = $_POST['fname'];
+        $lname = $_POST['lname'];
+        $property = $_POST['property'];
+        $message = $_POST['message'];
+        $args = array(
+            'post_type' => 'neo_form_entry',
+            'post_title' => $fname,
+            'post_content' => 'name: '.$fname."\n"."last name: ".$lname."\n"."Propery: ".$property."\n"."message: ".$message,
+            'post_status' => "private"
+        );
+        $post_id = wp_insert_post( $args );
+
+        if( is_wp_error($post_id) ){
+            echo "somethig went wrong";
+        }else{
+            update_post_meta( $post_id, 'first_name', $fname );
+            update_post_meta( $post_id, 'last_name', $lname );
+            update_post_meta( $post_id, 'propery', $property );
+            update_post_meta( $post_id, 'message', $message );
+
+            echo "entry success";
+        }
+
+    }
+}
+
+add_action( 'add_meta_boxes', 'wporg_add_custom_box' );
+function wporg_add_custom_box() {
+    $screens = [ 'neo_form_entry' ];
+    foreach ( $screens as $screen ) {
+        add_meta_box(
+            'enquiry_form_meta',                 // Unique ID
+            'Enquiry Post Meta Data',      // Box title
+            'enquiry_entry_custom_box_html',  // Content callback, must be of type callable
+            $screen                            // Post type
+        );
+    }
+}
+
+function enquiry_entry_custom_box_html( $post ) {
+    ?>
+    <table>
+        <tr>
+            <th>first name</th><td><?php echo get_post_meta($post->ID, 'first_name', true); ?></td>
+        </tr>
+        <tr>
+            <th>last name</th><td><?php echo get_post_meta($post->ID, 'last_name', true); ?></td>
+        </tr>
+        <tr>
+            <th>property name</th><td><?php echo get_post_meta($post->ID, 'propery', true); ?></td>
+        </tr>
+        <tr>
+            <th>message</th><td><?php echo get_post_meta($post->ID, 'message', true); ?></td>
+        </tr>
+    </table>
+    <?php
+}

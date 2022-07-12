@@ -330,5 +330,10 @@ add_action('wp_ajax_learn_nonce_ajax','learn_nonce_ajax_callback');
 add_action('wp_ajax_nopriv_learn_nonce_ajax','learn_nonce_ajax_callback');
 function learn_nonce_ajax_callback(){
     $nonce = $_POST['nonce'];
-    echo 'ddf'; die;
+    check_ajax_referer( 'search_form_nonce_3', 'nonce' );
+    // if( check_ajax_referer( 'search_form_nonce_3', 'nonce' ) ){
+    //     echo 'you are not allowed to perform this action';
+    //     die;
+    // }
+    echo 'form submitted successfully'; die;
 }

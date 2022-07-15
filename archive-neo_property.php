@@ -39,7 +39,7 @@ get_header();
 
         }// endwhile;
 
-        
+        echo strlen('east or west nilesh is the best');
         unset($Bsb4Design);
     } else {
         get_template_part('template-parts/section', 'no-results');

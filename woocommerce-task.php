@@ -112,3 +112,25 @@ function add_slogan_text_order_item_meta( $item, $cart_item_key, $values, $order
 	}
 
 }
+
+
+/**
+ * Add cart count in menu item
+ */
+add_filter( 'wp_nav_menu_items', 'add_cart_count_item_to_nav_menu', 10, 2 );
+function add_cart_count_item_to_nav_menu( $items, $args ) {
+    // print_r($args);
+    if( $args->menu->slug === 'menu-1' ){
+        $items .= '<li><a class="neo_cart_menu">Cart ( '.count(wc()->cart->get_cart()).' )</a></li>';
+    }        
+    return $items;
+}
+
+add_filter( 'woocommerce_add_to_cart_fragments', 'cart_count_item_add_to_cart_fragment' );
+
+function cart_count_item_add_to_cart_fragment( $fragments ) {
+
+	$fragments[ '.neo_cart_menu' ] = '<a class="neo_cart_menu">Cart ( '.count(wc()->cart->get_cart()).' )</a>';
+ 	return $fragments;
+
+ }

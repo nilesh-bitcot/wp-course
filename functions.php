@@ -360,9 +360,7 @@ function wporg_custom_post_type() {
 }
 add_action('init', 'wporg_custom_post_type');
 
-/**
- * Action to handle enquiry form submit
- */
+/* Action to handle enquiry form submit */
 add_action('init', 'enquiry_form_submit_handler');
 function enquiry_form_submit_handler(){
     if( isset($_POST['action']) && $_POST['action'] == 'enquiry_form' ){
@@ -404,10 +402,19 @@ function wporg_add_custom_box() {
             'enquiry_form_meta',                 // Unique ID
             'Enquiry Post Meta Data',      // Box title
             'enquiry_entry_custom_box_html',  // Content callback, must be of type callable
-            $screen                            // Post type
+            $screen,                           // Post type
+            'advanced',
+            'core'
         );
     }
 }
+
+// Move all "advanced" metaboxes above the default editor
+add_action('edit_form_after_title', function() {
+    global $post, $wp_meta_boxes;
+    do_meta_boxes(get_current_screen(), 'advanced', $post);
+    unset($wp_meta_boxes[get_post_type($post)]['advanced']);
+});
 
 function enquiry_entry_custom_box_html( $post ) {
     ?>
@@ -418,12 +425,140 @@ function enquiry_entry_custom_box_html( $post ) {
         <tr>
             <th>last name</th><td><?php echo get_post_meta($post->ID, 'last_name', true); ?></td>
         </tr>
+        <?php 
+        if( $prop_id = get_post_meta($post->ID, 'property_id', true) ){
+            ?>
+            <tr>
+                <th>Property name</th><td><?php 
+                echo '<h4>'.get_the_title($prop_id).'</h4>';
+                echo 'cost: '.get_post_meta($prop_id,'prop_cost',true);
+                ?></td>
+            </tr>
+            <?php
+        }
+        ?>
         <tr>
-            <th>property name</th><td><?php echo get_post_meta($post->ID, 'propery', true); ?></td>
+            <th><?php echo ($prop_id)? 'title':'property name'; ?></th><td><?php echo get_post_meta($post->ID, 'propery', true); ?></td>
         </tr>
         <tr>
             <th>message</th><td><?php echo get_post_meta($post->ID, 'message', true); ?></td>
         </tr>
+        
     </table>
     <?php
+}
+
+
+/**
+ * Create/register custom post type Property
+ */
+
+function wporg_custom_post_type_property() {
+    register_post_type('neo_property',
+        array(
+            'labels'      => array(
+                'name'          => __('Neo Property', 'textdomain'),
+                'singular_name' => __('Neo Property', 'textdomain'),
+                'featured_image'     => __( 'Property Image', 'textdomain' ),
+                'set_featured_image' => __( 'Set Property image', 'recipe' ),
+                'remove_featured_image' => __( 'Remove Property image', 'recipe' ),
+                'use_featured_image'    => __( 'Use as Property image', 'recipe' ),
+        
+            ),
+            'supports'            => array( 'title', 'editor', 'thumbnail' ),
+            'hierarchical'        => false,
+            'show_ui'             => true,
+            'show_in_menu'        => true,
+            'public'               => true,
+            'has_archive' => true,
+            // 'rewrite'  => array( 'slug' => 'recipe' ),
+        )
+    );
+}
+add_action('init', 'wporg_custom_post_type_property');
+
+add_action( 'add_meta_boxes', 'neo_property_custom_meta_box' );
+function neo_property_custom_meta_box() {
+    $screens = [ 'neo_property' ];
+    foreach ( $screens as $screen ) {
+        add_meta_box(
+            'neo_property_meta',                 // Unique ID
+            'Meta Data',      // Box title
+            'neo_property_custom_box_html',  // Content callback, must be of type callable
+            $screen                            // Post type
+        );
+    }
+}
+
+function neo_property_custom_box_html( $post ) {
+    ?>
+    <table>
+        <tr>
+            <th>Area ( sq feet )</th><td><input value="<?php echo get_post_meta($post->ID, 'prop_area', true); ?>" name="prop_area" ></td>
+        </tr>
+        <tr>
+            <th>Cost ($)</th><td><input value="<?php echo get_post_meta($post->ID, 'prop_cost', true); ?>" name="prop_cost"></td>
+        </tr>
+        <tr>
+            <th>Loan Available</th><td><input value="<?php echo get_post_meta($post->ID, 'prop_loan', true); ?>" name="prop_loan"></td>
+        </tr>
+        <tr>
+    </table>
+    <?php
+}
+
+add_action('save_post', function( $post_id, $post, $update ){
+    // Only want to set if this is a new post!
+    // if ( $update ){
+    //     return;
+    // }
+     
+    // Only set for post_type = post!
+    if ( 'neo_property' !== $post->post_type ) {
+        return;
+    }
+     
+    // Get the default term using the slug, its more portable!
+    if($_POST['prop_area']) update_post_meta($post_id, 'prop_area', $_POST['prop_area']);
+    if($_POST['prop_cost']) update_post_meta($post_id, 'prop_cost', $_POST['prop_cost']);
+    if($_POST['prop_loan']) update_post_meta($post_id, 'prop_loan', $_POST['prop_loan']);
+ 
+    // wp_set_post_terms( $post_id, $term->term_id, 'category', true );
+}, 99, 3);
+
+
+// property_enquiry_form
+add_action('init', 'property_enquiry_form_handler');
+function property_enquiry_form_handler(){
+    if( isset($_POST['action']) && $_POST['action'] == 'property_enquiry_form' ){
+        if( !wp_verify_nonce( $_POST['_nonce'], 'enquiry_form_nonce') ){
+            die('actino nonce failled');
+        }
+
+        $fname = $_POST['fname'];
+        $lname = $_POST['lname'];
+        $property = $_POST['property'];
+        $property_id = $_POST['property_id'];
+        $message = $_POST['message'];
+        $args = array(
+            'post_type' => 'neo_form_entry',
+            'post_title' => $fname . '--enquiry for--'. get_the_title($property_id),
+            'post_content' => 'name: '.$fname."\n"."last name: ".$lname."\n"."Propery: ".$property."\n"."message: ".$message,
+            'post_status' => "private"
+        );
+        $post_id = wp_insert_post( $args );
+
+        if( is_wp_error($post_id) ){
+            echo "somethig went wrong";
+        }else{
+            update_post_meta( $post_id, 'first_name', $fname );
+            update_post_meta( $post_id, 'last_name', $lname );
+            update_post_meta( $post_id, 'propery', $property );
+            update_post_meta( $post_id, 'message', $message );
+            update_post_meta( $post_id, 'property_id', $property_id );
+
+            echo "entry success";
+        }
+
+    }
 }
